@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HireFlow | Employee Hiring Platform</title>
+    <title>HireFlow Pro | Employee Hiring Platform</title>
     <style>
         * {
             margin: 0;
@@ -49,7 +49,7 @@
         /* Stats Cards */
         .stats-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -80,6 +80,23 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            min-width: 150px;
+            flex: 1;
         }
 
         /* Main Content Layout */
@@ -183,6 +200,15 @@
             background: #ff3838;
         }
 
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
         /* Jobs List Styles */
         .jobs-container {
             background: white;
@@ -196,6 +222,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .jobs-header h2 {
@@ -223,11 +251,29 @@
             padding: 1.5rem;
             transition: all 0.3s ease;
             border: 2px solid transparent;
+            position: relative;
         }
 
         .job-card:hover {
             border-color: #667eea;
             transform: translateX(5px);
+        }
+
+        .job-card.featured {
+            border-left: 4px solid #fbbf24;
+            background: linear-gradient(to right, #fef3c7, #f8f9fa);
+        }
+
+        .featured-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #fbbf24;
+            color: #92400e;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
         }
 
         .job-card-header {
@@ -269,6 +315,7 @@
             margin-bottom: 1rem;
             font-size: 0.9rem;
             color: #888;
+            flex-wrap: wrap;
         }
 
         .job-meta span {
@@ -281,6 +328,7 @@
             display: flex;
             gap: 0.5rem;
             justify-content: flex-end;
+            flex-wrap: wrap;
         }
 
         .job-actions button {
@@ -363,6 +411,24 @@
             border-left: 4px solid #ef4444;
         }
 
+        /* Export Button */
+        .export-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .export-btn:hover {
+            background: #059669;
+        }
+
         /* Loading State */
         .loading {
             text-align: center;
@@ -395,11 +461,14 @@
             
             .jobs-header {
                 flex-direction: column;
-                gap: 1rem;
             }
             
             .search-box {
                 width: 100%;
+            }
+
+            .filter-bar {
+                flex-direction: column;
             }
         }
     </style>
@@ -408,8 +477,16 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>🚀 HireFlow</h1>
+            <h1>🚀 HireFlow Pro</h1>
             <p>Streamline your hiring process with our modern employee hiring platform</p>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                <button class="export-btn" onclick="AppController.exportData()">
+                    📥 Export Jobs
+                </button>
+                <button class="btn btn-secondary" onclick="AppController.importData()">
+                    📤 Import Jobs
+                </button>
+            </div>
         </header>
 
         <!-- Stats Section -->
@@ -430,6 +507,34 @@
                 <h3>Companies</h3>
                 <div class="number" id="totalCompanies">0</div>
             </div>
+            <div class="stat-card">
+                <h3>Avg Salary</h3>
+                <div class="number" id="avgSalary">$0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Featured</h3>
+                <div class="number" id="featuredJobs">0</div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <select class="filter-select" id="typeFilter">
+                <option value="">All Types</option>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Internship">Internship</option>
+                <option value="Remote">Remote</option>
+            </select>
+            <select class="filter-select" id="sortFilter">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="mostApps">Most Applications</option>
+                <option value="leastApps">Least Applications</option>
+                <option value="az">A-Z</option>
+                <option value="za">Z-A</option>
+            </select>
         </div>
 
         <!-- Main Content -->
@@ -472,6 +577,11 @@
                     <div class="form-group">
                         <label for="applications">Initial Applications Count</label>
                         <input type="number" id="applications" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="featured"> Mark as Featured Job
+                        </label>
                     </div>
                     <button type="submit" class="btn btn-primary" id="submitBtn">Post Job</button>
                 </form>
@@ -533,6 +643,11 @@
                     <label for="editApplications">Applications Count</label>
                     <input type="number" id="editApplications" min="0">
                 </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editFeatured"> Featured Job
+                    </label>
+                </div>
                 <button type="submit" class="btn btn-primary">Update Job</button>
             </form>
         </div>
@@ -544,32 +659,28 @@
     <script>
         // Modular JavaScript - Job Module
         const JobModule = (function() {
-            // Storage keys
-            const STORAGE_KEY = 'hireflow_jobs';
+            const STORAGE_KEY = 'hireflow_jobs_pro';
             
-            // Get all jobs from localStorage
             function getJobs() {
                 const jobs = localStorage.getItem(STORAGE_KEY);
                 return jobs ? JSON.parse(jobs) : [];
             }
             
-            // Save jobs to localStorage
             function saveJobs(jobs) {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
             }
             
-            // Generate unique ID
             function generateId() {
                 return Date.now().toString(36) + Math.random().toString(36).substr(2);
             }
             
-            // Add new job
             function addJob(jobData) {
                 const jobs = getJobs();
                 const newJob = {
                     id: generateId(),
                     ...jobData,
                     applications: parseInt(jobData.applications) || 0,
+                    featured: jobData.featured || false,
                     postedDate: new Date().toISOString()
                 };
                 jobs.push(newJob);
@@ -577,7 +688,6 @@
                 return newJob;
             }
             
-            // Update job
             function updateJob(id, updatedData) {
                 const jobs = getJobs();
                 const index = jobs.findIndex(job => job.id === id);
@@ -589,7 +699,6 @@
                 return null;
             }
             
-            // Delete job
             function deleteJob(id) {
                 const jobs = getJobs();
                 const filteredJobs = jobs.filter(job => job.id !== id);
@@ -597,35 +706,106 @@
                 return filteredJobs;
             }
             
-            // Get job by ID
             function getJobById(id) {
                 const jobs = getJobs();
                 return jobs.find(job => job.id === id);
             }
             
-            // Search jobs
-            function searchJobs(searchTerm) {
-                const jobs = getJobs();
-                if (!searchTerm) return jobs;
+            function searchJobs(searchTerm, typeFilter = '', sortFilter = 'newest') {
+                let jobs = getJobs();
                 
-                searchTerm = searchTerm.toLowerCase();
-                return jobs.filter(job => 
-                    job.title.toLowerCase().includes(searchTerm) ||
-                    job.company.toLowerCase().includes(searchTerm) ||
-                    job.location.toLowerCase().includes(searchTerm) ||
-                    job.description.toLowerCase().includes(searchTerm)
-                );
+                // Search
+                if (searchTerm) {
+                    searchTerm = searchTerm.toLowerCase();
+                    jobs = jobs.filter(job => 
+                        job.title.toLowerCase().includes(searchTerm) ||
+                        job.company.toLowerCase().includes(searchTerm) ||
+                        job.location.toLowerCase().includes(searchTerm) ||
+                        job.description.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                // Type filter
+                if (typeFilter) {
+                    jobs = jobs.filter(job => job.type === typeFilter);
+                }
+                
+                // Sort
+                switch(sortFilter) {
+                    case 'newest':
+                        jobs.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
+                        break;
+                    case 'oldest':
+                        jobs.sort((a, b) => new Date(a.postedDate) - new Date(b.postedDate));
+                        break;
+                    case 'mostApps':
+                        jobs.sort((a, b) => b.applications - a.applications);
+                        break;
+                    case 'leastApps':
+                        jobs.sort((a, b) => a.applications - b.applications);
+                        break;
+                    case 'az':
+                        jobs.sort((a, b) => a.title.localeCompare(b.title));
+                        break;
+                    case 'za':
+                        jobs.sort((a, b) => b.title.localeCompare(a.title));
+                        break;
+                }
+                
+                return jobs;
             }
             
-            // Get statistics
             function getStats() {
                 const jobs = getJobs();
                 const totalJobs = jobs.length;
-                const activeJobs = jobs.filter(job => job.status !== 'closed').length;
+                const activeJobs = jobs.length;
                 const totalApplications = jobs.reduce((sum, job) => sum + (job.applications || 0), 0);
                 const companies = new Set(jobs.map(job => job.company)).size;
+                const featuredJobs = jobs.filter(job => job.featured).length;
                 
-                return { totalJobs, activeJobs, totalApplications, companies };
+                // Calculate average salary (simplified)
+                let avgSalary = 0;
+                const salaryJobs = jobs.filter(job => job.salary);
+                if (salaryJobs.length > 0) {
+                    const salaries = salaryJobs.map(job => {
+                        const match = job.salary.match(/\$?(\d+)/g);
+                        if (match && match.length >= 2) {
+                            return (parseInt(match[0].replace('$', '')) + parseInt(match[1].replace('$', ''))) / 2;
+                        }
+                        return 0;
+                    }).filter(s => s > 0);
+                    
+                    if (salaries.length > 0) {
+                        avgSalary = Math.round(salaries.reduce((a, b) => a + b, 0) / salaries.length);
+                    }
+                }
+                
+                return { totalJobs, activeJobs, totalApplications, companies, featuredJobs, avgSalary };
+            }
+            
+            function exportData() {
+                const jobs = getJobs();
+                const dataStr = JSON.stringify(jobs, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                const exportFileDefaultName = `hireflow_export_${new Date().toISOString().slice(0,10)}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            }
+            
+            function importData(jsonData) {
+                try {
+                    const jobs = JSON.parse(jsonData);
+                    if (Array.isArray(jobs)) {
+                        saveJobs(jobs);
+                        return true;
+                    }
+                } catch (e) {
+                    return false;
+                }
+                return false;
             }
             
             return {
@@ -635,27 +815,31 @@
                 deleteJob,
                 getJobById,
                 searchJobs,
-                getStats
+                getStats,
+                exportData,
+                importData
             };
         })();
 
         // UI Module
         const UIModule = (function() {
-            // DOM elements
             const elements = {
                 jobsGrid: document.getElementById('jobsGrid'),
                 totalJobs: document.getElementById('totalJobs'),
                 activeJobs: document.getElementById('activeJobs'),
                 totalApplications: document.getElementById('totalApplications'),
                 totalCompanies: document.getElementById('totalCompanies'),
+                featuredJobs: document.getElementById('featuredJobs'),
+                avgSalary: document.getElementById('avgSalary'),
                 searchInput: document.getElementById('searchInput'),
+                typeFilter: document.getElementById('typeFilter'),
+                sortFilter: document.getElementById('sortFilter'),
                 jobForm: document.getElementById('jobForm'),
                 editModal: document.getElementById('editModal'),
                 editForm: document.getElementById('editForm'),
                 toast: document.getElementById('toast')
             };
             
-            // Render jobs
             function renderJobs(jobs) {
                 const jobsGrid = elements.jobsGrid;
                 
@@ -671,7 +855,8 @@
                 }
                 
                 jobsGrid.innerHTML = jobs.map(job => `
-                    <div class="job-card">
+                    <div class="job-card ${job.featured ? 'featured' : ''}">
+                        ${job.featured ? '<span class="featured-badge">⭐ Featured</span>' : ''}
                         <div class="job-card-header">
                             <div>
                                 <div class="job-title">${escapeHtml(job.title)}</div>
@@ -684,8 +869,10 @@
                             <span>📍 ${escapeHtml(job.location)}</span>
                             <span>💰 ${job.salary ? escapeHtml(job.salary) : 'Not specified'}</span>
                             <span>📊 ${job.applications || 0} applications</span>
+                            <span>📅 ${new Date(job.postedDate).toLocaleDateString()}</span>
                         </div>
                         <div class="job-actions">
+                            <button class="btn btn-secondary" onclick="window.duplicateJob('${job.id}')">📋 Duplicate</button>
                             <button class="btn btn-secondary" onclick="window.editJob('${job.id}')">Edit</button>
                             <button class="btn btn-danger" onclick="window.deleteJob('${job.id}')">Delete</button>
                         </div>
@@ -693,16 +880,16 @@
                 `).join('');
             }
             
-            // Update statistics
             function updateStats() {
                 const stats = JobModule.getStats();
                 elements.totalJobs.textContent = stats.totalJobs;
                 elements.activeJobs.textContent = stats.activeJobs;
                 elements.totalApplications.textContent = stats.totalApplications;
                 elements.totalCompanies.textContent = stats.companies;
+                elements.featuredJobs.textContent = stats.featuredJobs;
+                elements.avgSalary.textContent = stats.avgSalary ? `$${stats.avgSalary}k` : '$0';
             }
             
-            // Show toast notification
             function showToast(message, type = 'success') {
                 const toast = elements.toast;
                 toast.textContent = message;
@@ -714,14 +901,12 @@
                 }, 3000);
             }
             
-            // Escape HTML to prevent XSS
             function escapeHtml(text) {
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
             }
             
-            // Open edit modal
             function openEditModal(job) {
                 document.getElementById('editJobId').value = job.id;
                 document.getElementById('editJobTitle').value = job.title;
@@ -731,11 +916,11 @@
                 document.getElementById('editSalary').value = job.salary || '';
                 document.getElementById('editDescription').value = job.description;
                 document.getElementById('editApplications').value = job.applications || 0;
+                document.getElementById('editFeatured').checked = job.featured || false;
                 
                 elements.editModal.classList.add('active');
             }
             
-            // Close edit modal
             function closeEditModal() {
                 elements.editModal.classList.remove('active');
             }
@@ -753,31 +938,27 @@
 
         // App Controller
         const AppController = (function(JobModule, UIModule) {
-            // Initialize app
             function init() {
                 loadJobs();
                 setupEventListeners();
             }
             
-            // Load all jobs
             function loadJobs() {
-                const jobs = JobModule.getJobs();
+                const searchTerm = UIModule.elements.searchInput.value;
+                const typeFilter = UIModule.elements.typeFilter.value;
+                const sortFilter = UIModule.elements.sortFilter.value;
+                const jobs = JobModule.searchJobs(searchTerm, typeFilter, sortFilter);
                 UIModule.renderJobs(jobs);
                 UIModule.updateStats();
             }
             
-            // Setup event listeners
             function setupEventListeners() {
-                // Add job form
                 UIModule.elements.jobForm.addEventListener('submit', handleAddJob);
-                
-                // Search input
-                UIModule.elements.searchInput.addEventListener('input', handleSearch);
-                
-                // Edit form
+                UIModule.elements.searchInput.addEventListener('input', loadJobs);
+                UIModule.elements.typeFilter.addEventListener('change', loadJobs);
+                UIModule.elements.sortFilter.addEventListener('change', loadJobs);
                 UIModule.elements.editForm.addEventListener('submit', handleEditJob);
                 
-                // Close modal when clicking outside
                 window.addEventListener('click', (e) => {
                     if (e.target === UIModule.elements.editModal) {
                         UIModule.closeEditModal();
@@ -785,7 +966,6 @@
                 });
             }
             
-            // Handle add job
             function handleAddJob(e) {
                 e.preventDefault();
                 
@@ -796,7 +976,8 @@
                     type: document.getElementById('jobType').value,
                     salary: document.getElementById('salary').value,
                     description: document.getElementById('description').value,
-                    applications: document.getElementById('applications').value
+                    applications: document.getElementById('applications').value,
+                    featured: document.getElementById('featured').checked
                 };
                 
                 JobModule.addJob(jobData);
@@ -805,14 +986,6 @@
                 e.target.reset();
             }
             
-            // Handle search
-            function handleSearch(e) {
-                const searchTerm = e.target.value;
-                const filteredJobs = JobModule.searchJobs(searchTerm);
-                UIModule.renderJobs(filteredJobs);
-            }
-            
-            // Handle edit job
             function handleEditJob(e) {
                 e.preventDefault();
                 
@@ -824,7 +997,8 @@
                     type: document.getElementById('editJobType').value,
                     salary: document.getElementById('editSalary').value,
                     description: document.getElementById('editDescription').value,
-                    applications: document.getElementById('editApplications').value
+                    applications: document.getElementById('editApplications').value,
+                    featured: document.getElementById('editFeatured').checked
                 };
                 
                 JobModule.updateJob(id, updatedData);
@@ -833,7 +1007,31 @@
                 UIModule.showToast('Job updated successfully! ✨');
             }
             
-            // Global functions for button clicks
+            function exportData() {
+                JobModule.exportData();
+                UIModule.showToast('Data exported successfully! 📥');
+            }
+            
+            function importData() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = function(e) {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        if (JobModule.importData(e.target.result)) {
+                            loadJobs();
+                            UIModule.showToast('Data imported successfully! 📤');
+                        } else {
+                            UIModule.showToast('Invalid file format! ❌', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            }
+            
             window.editJob = function(id) {
                 const job = JobModule.getJobById(id);
                 if (job) {
@@ -849,20 +1047,32 @@
                 }
             };
             
+            window.duplicateJob = function(id) {
+                const job = JobModule.getJobById(id);
+                if (job) {
+                    const { id: _, postedDate: __, ...jobData } = job;
+                    JobModule.addJob({ ...jobData, applications: 0 });
+                    loadJobs();
+                    UIModule.showToast('Job duplicated successfully! 📋');
+                }
+            };
+            
             window.closeEditModal = function() {
                 UIModule.closeEditModal();
             };
             
             return {
-                init
+                init,
+                exportData,
+                importData
             };
         })(JobModule, UIModule);
 
-        // Initialize the app when DOM is loaded
+        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             AppController.init();
             
-            // Add some sample data if no jobs exist
+            // Sample data
             if (JobModule.getJobs().length === 0) {
                 const sampleJobs = [
                     {
@@ -871,8 +1081,10 @@
                         location: "Remote",
                         type: "Full-time",
                         salary: "$120k - $150k",
-                        description: "We're looking for an experienced Frontend Developer with React expertise to join our growing team. You'll be working on cutting-edge projects with a modern tech stack.",
-                        applications: 12
+                        description: "We're looking for an experienced Frontend Developer with React expertise.",
+                        applications: 12,
+                        featured: true,
+                        postedDate: new Date().toISOString()
                     },
                     {
                         title: "Product Manager",
@@ -880,24 +1092,14 @@
                         location: "San Francisco, CA",
                         type: "Full-time",
                         salary: "$130k - $160k",
-                        description: "Join our product team to lead the development of innovative SaaS solutions. We need someone with strong leadership skills and technical background.",
-                        applications: 8
-                    },
-                    {
-                        title: "UX Designer",
-                        company: "CreativeStudio",
-                        location: "New York, NY",
-                        type: "Contract",
-                        salary: "$80k - $100k",
-                        description: "Seeking a talented UX Designer to create amazing user experiences. You'll work closely with product managers and developers.",
-                        applications: 5
+                        description: "Lead product development for innovative SaaS solutions.",
+                        applications: 8,
+                        featured: false,
+                        postedDate: new Date().toISOString()
                     }
                 ];
                 
-                sampleJobs.forEach(job => {
-                    JobModule.addJob(job);
-                });
-                
+                sampleJobs.forEach(job => JobModule.addJob(job));
                 UIModule.renderJobs(JobModule.getJobs());
                 UIModule.updateStats();
             }
